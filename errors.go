@@ -87,7 +87,7 @@ func New(args ...interface{}) error {
 			panic("errors.New requires no additional arguments are provided when the first argument is an error")
 		} else {
 			return &errorImpl{
-				msg:      "",
+				msg:      e.Error(),
 				error:    e,
 				frames:   getStack(3),
 				metadata: metadata,
