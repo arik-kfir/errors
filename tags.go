@@ -5,6 +5,7 @@ type tag struct {
 }
 
 type TagProvider interface {
+	HasTag(tag string) bool
 	Tags() []string
 }
 
@@ -27,11 +28,9 @@ func extractTagsFrom(args ...interface{}) ([]string, []interface{}) {
 
 func HasTag(err error, tag string) bool {
 	for err != nil {
-		if mp, ok := err.(TagProvider); ok {
-			for _, t := range mp.Tags() {
-				if t == tag {
-					return true
-				}
+		if tp, ok := err.(TagProvider); ok {
+			if tp.HasTag(tag) {
+				return true
 			}
 		}
 		err = Unwrap(err)

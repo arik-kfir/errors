@@ -32,13 +32,17 @@ func TestErrorNew(t *testing.T) {
 		testutils.AssertEqual(t, "new1: arg", err.Error())
 		testutils.AssertEqual(t, 1, len(err.(errors.TagProvider).Tags()))
 		testutils.AssertEqual(t, "synthetic", err.(errors.TagProvider).Tags()[0])
+		testutils.AssertTrue(t, err.(errors.TagProvider).HasTag("synthetic"))
+		testutils.AssertTrue(t, errors.HasTag(err, "synthetic"))
 	})
 	t.Run("Meta not added to message", func(t *testing.T) {
 		err := errors.New("new1: %s", errors.Meta("user", "Joe"), "arg")
 		testutils.AssertNotNil(t, err)
 		testutils.AssertEqual(t, "new1: arg", err.Error())
-		testutils.AssertEqual(t, 1, len(err.(errors.MetaProvider).Meta()))
-		testutils.AssertEqual(t, "Joe", err.(errors.MetaProvider).Meta()["user"])
+		testutils.AssertEqual(t, 1, len(err.(errors.MetaProvider).MetaMap()))
+		testutils.AssertEqual(t, "Joe", err.(errors.MetaProvider).MetaMap()["user"])
+		testutils.AssertEqual(t, "Joe", err.(errors.MetaProvider).Meta("user"))
+		testutils.AssertEqual(t, "Joe", errors.GetMeta(err, "user"))
 	})
 }
 
@@ -101,7 +105,7 @@ func TestErrorStackTrace(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorStackTrace.func1$",
-				errorTestFileM("92"),
+				errorTestFileM("96"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -121,7 +125,7 @@ func TestErrorStackTrace(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorStackTrace.func2$",
-				errorTestFileM("112"),
+				errorTestFileM("116"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -144,7 +148,7 @@ func TestErrorChainStackTrace(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorChainStackTrace.func1$",
-				errorTestFileM("134"),
+				errorTestFileM("138"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -165,7 +169,7 @@ func TestErrorChainStackTrace(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorChainStackTrace.func2$",
-				errorTestFileM("155"),
+				errorTestFileM("159"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -179,7 +183,7 @@ func TestErrorChainStackTrace(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorChainStackTrace.func2$",
-				errorTestFileM("154"),
+				errorTestFileM("158"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -196,7 +200,7 @@ func TestErrorFrames(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorFrames.func1$",
-				errorTestFileM("192"),
+				errorTestFileM("196"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -211,7 +215,7 @@ func TestErrorFrames(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorFrames.func2$",
-				errorTestFileM("207"),
+				errorTestFileM("211"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -229,7 +233,7 @@ func TestErrorChainFrames(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorChainFrames.func1$",
-				errorTestFileM("224"),
+				errorTestFileM("228"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -245,7 +249,7 @@ func TestErrorChainFrames(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorChainFrames.func2$",
-				errorTestFileM("240"),
+				errorTestFileM("244"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -254,7 +258,7 @@ func TestErrorChainFrames(t *testing.T) {
 			[]string{
 				"",
 				"^github\\.com/secureworks/errors_test.TestErrorChainFrames.func2$",
-				errorTestFileM("239"),
+				errorTestFileM("243"),
 				`^testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},
@@ -281,7 +285,7 @@ func TestErrorFormat(t *testing.T) {
 			expect: []string{
 				"new1",
 				"^     github.com/secureworks/errors_test\\.TestErrorFormat$",
-				errorTestFileM("280"),
+				errorTestFileM("284"),
 				`^     testing\.tRunner$`,
 				`^     .+/testing/testing.go:\d+$`,
 			},
@@ -293,19 +297,19 @@ func TestErrorFormat(t *testing.T) {
 			expect: []string{
 				"wrap2: wrap1: root",
 				"^     github.com/secureworks/errors_test.TestErrorFormat$",
-				errorTestFileM("292"),
+				errorTestFileM("296"),
 				`^     testing\.tRunner$`,
 				`^     .+/testing/testing.go:\d+$`,
 				"",
 				"CAUSED BY: wrap1: root",
 				"^     github.com/secureworks/errors_test.TestErrorFormat$",
-				errorTestFileM("292"),
+				errorTestFileM("296"),
 				`^     testing\.tRunner$`,
 				`^     .+/testing/testing.go:\d+$`,
 				"",
 				"CAUSED BY: root",
 				"^     github.com/secureworks/errors_test.TestErrorFormat$",
-				errorTestFileM("292"),
+				errorTestFileM("296"),
 				`^     testing\.tRunner$`,
 				`^     .+/testing/testing.go:\d+$`,
 			},

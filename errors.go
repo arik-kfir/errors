@@ -239,8 +239,21 @@ func (w *errorImpl) Format(s fmt.State, verb rune) {
 	}
 }
 
-func (w *errorImpl) Meta() map[string]interface{} {
+func (w *errorImpl) Meta(key string) interface{} {
+	return w.metadata[key]
+}
+
+func (w *errorImpl) MetaMap() map[string]interface{} {
 	return w.metadata
+}
+
+func (w *errorImpl) HasTag(tag string) bool {
+	for _, t := range w.tags {
+		if t == tag {
+			return true
+		}
+	}
+	return false
 }
 
 func (w *errorImpl) Tags() []string {

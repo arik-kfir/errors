@@ -6,7 +6,8 @@ type metadata struct {
 }
 
 type MetaProvider interface {
-	Meta() map[string]interface{}
+	Meta(key string) interface{}
+	MetaMap() map[string]interface{}
 }
 
 func Meta(key string, value interface{}) interface{} {
@@ -29,7 +30,7 @@ func extractMetaFrom(args ...interface{}) (map[string]interface{}, []interface{}
 func GetMeta(err error, key string) interface{} {
 	for err != nil {
 		if mp, ok := err.(MetaProvider); ok {
-			if v, ok := mp.Meta()[key]; ok {
+			if v, ok := mp.MetaMap()[key]; ok {
 				return v
 			}
 		}
