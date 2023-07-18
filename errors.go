@@ -27,9 +27,11 @@ type Unwrapper interface {
 // errorImpl implements an error type that provides a message, optional causing error (next in the chain), and the
 // stack-trace that led to its creation.
 type errorImpl struct {
-	msg    string
-	error  error
-	frames frames
+	msg      string
+	error    error
+	frames   frames
+	metadata map[string]interface{}
+	tags     []string
 }
 
 var _ interface { // Assert interface implementation.
@@ -40,6 +42,8 @@ var _ interface { // Assert interface implementation.
 	fmt.Formatter
 	ChainStackTracer
 	ChainFramer
+	MetaProvider
+	TagProvider
 } = (*errorImpl)(nil)
 
 // New returns a new error that formats as the given text, args and optionally a wrapped error, and also captures the
@@ -60,13 +64,20 @@ var _ interface { // Assert interface implementation.
 //	fmt.Println(err) // <- will print "permission denied"
 //	fmt.Printf("%+v\n", err) // <- prints full error chain with stack traces of the wrapping & wrapped errors
 func New(args ...interface{}) error {
+	var metadata map[string]interface{}
+	var tags []string
+
+	metadata, args = extractMetaFrom(args...)
+	tags, args = extractTagsFrom(args...)
 
 	// if no args - just an empty error with a stack trace
 	if len(args) == 0 {
 		return &errorImpl{
-			msg:    "",
-			error:  nil,
-			frames: getStack(3),
+			msg:      "",
+			error:    nil,
+			frames:   getStack(3),
+			metadata: metadata,
+			tags:     tags,
 		}
 	}
 
@@ -76,9 +87,11 @@ func New(args ...interface{}) error {
 			panic("errors.New requires no additional arguments are provided when the first argument is an error")
 		} else {
 			return &errorImpl{
-				msg:    "",
-				error:  e,
-				frames: getStack(3),
+				msg:      "",
+				error:    e,
+				frames:   getStack(3),
+				metadata: metadata,
+				tags:     tags,
 			}
 		}
 	}
@@ -125,9 +138,11 @@ func New(args ...interface{}) error {
 	}
 
 	return &errorImpl{
-		msg:    msg,
-		error:  wrapped,
-		frames: getStack(3),
+		msg:      msg,
+		error:    wrapped,
+		frames:   getStack(3),
+		metadata: metadata,
+		tags:     tags,
 	}
 }
 
@@ -222,6 +237,14 @@ func (w *errorImpl) Format(s fmt.State, verb rune) {
 	default:
 		// empty
 	}
+}
+
+func (w *errorImpl) Meta() map[string]interface{} {
+	return w.metadata
+}
+
+func (w *errorImpl) Tags() []string {
+	return w.tags
 }
 
 // Error masking.
