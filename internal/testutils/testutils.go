@@ -104,8 +104,8 @@ func AssertLinesMatch(t *testing.T, arg interface{}, format string, expected int
 
 	if len(wantLines) != len(gotLines) {
 		t.Errorf(
-			"wantLines(%d) does not equal gotLines(%d):\n got: %q\nwant: %q",
-			len(wantLines), len(gotLines), got, expected)
+			"wantLines(%d) does not equal gotLines(%d):\n got:\n%s\nwant:\n%s",
+			len(wantLines), len(gotLines), strings.Join(gotLines, "\n"), strings.Join(wantLines, "\n"))
 		return
 	}
 
