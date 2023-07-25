@@ -260,6 +260,27 @@ func (w *errorImpl) Tags() []string {
 	return w.tags
 }
 
+// PrintStackChain prints the stack traces of the entire given error chain.
+func PrintStackChain(w io.Writer, err error) {
+	if w == nil {
+		panic("nil writer")
+	}
+	for err != nil {
+		_, _ = fmt.Fprintf(w, "%s", err.Error())
+		if fp, ok := err.(Framer); ok {
+			_, _ = fmt.Fprintf(w, "%+5v", fp.Frames())
+		}
+
+		err = Unwrap(err)
+		if err != nil {
+			_, _ = fmt.Fprintln(w)
+			_, _ = fmt.Fprintln(w)
+			_, _ = fmt.Fprintf(w, "CAUSED BY: ")
+		}
+	}
+	//_, _ = fmt.Fprintln(w)
+}
+
 // Error masking.
 
 // Mask returns an error with the same message context as err, but that

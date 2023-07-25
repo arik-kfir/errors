@@ -1,6 +1,7 @@
 package errors_test
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -364,5 +365,74 @@ func TestOpaque(t *testing.T) {
 		testutils.AssertEqual(t, "wrapper: root", opaque.Error())
 		testutils.AssertFalse(t, errors.Is(opaque, wrapper))
 		testutils.AssertTrue(t, oisChainStackTracer)
+	})
+}
+
+func TestPrintStackChain(t *testing.T) {
+	t.Run("nil writer panics", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				testutils.AssertEqual(t, "nil writer", r)
+			} else {
+				t.Error("expected panic")
+			}
+		}()
+		errors.PrintStackChain(nil, errors.New("oops"))
+	})
+	t.Run("prints stack trace of standalone error", func(t *testing.T) {
+		err := errors.New("new1")
+		buf := bytes.Buffer{}
+		errors.PrintStackChain(&buf, err)
+		testutils.AssertLinesMatch(t, buf.String(), "%s",
+			[]string{
+				"new1",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func2$",
+				errorTestFileM("383"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+			},
+		)
+	})
+	t.Run("prints stack trace of wrapping error", func(t *testing.T) {
+		root := errors.New("root")
+		wrapper := errors.New("wrapper: %w", root)
+		buf := bytes.Buffer{}
+		errors.PrintStackChain(&buf, wrapper)
+		testutils.AssertLinesMatch(t, buf.String(), "%s",
+			[]string{
+				"wrapper: root",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func3$",
+				errorTestFileM("398"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+				"",
+				"CAUSED BY: root",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func3$",
+				errorTestFileM("397"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+			},
+		)
+	})
+	t.Run("prints stack trace of no-stack error wrapping stacked error", func(t *testing.T) {
+		root := errors.New("root")
+		wrapper := errors.New("wrapper: %w", root)
+		buf := bytes.Buffer{}
+		errors.PrintStackChain(&buf, wrapper)
+		testutils.AssertLinesMatch(t, buf.String(), "%s",
+			[]string{
+				"wrapper: root",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func4$",
+				errorTestFileM("419"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+				"",
+				"CAUSED BY: root",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func4$",
+				errorTestFileM("418"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+			},
+		)
 	})
 }
