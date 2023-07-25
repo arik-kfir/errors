@@ -3,6 +3,7 @@ package errors_test
 import (
 	"bytes"
 	"fmt"
+	pkgerrors "github.com/pkg/errors"
 	"testing"
 
 	"github.com/secureworks/errors"
@@ -430,6 +431,49 @@ func TestPrintStackChain(t *testing.T) {
 				"CAUSED BY: root",
 				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func4$",
 				errorTestFileM("418"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+			},
+		)
+	})
+	t.Run("prints stack trace of standalone pkg/errors error", func(t *testing.T) {
+		err := pkgerrors.WithStack(fmt.Errorf("root"))
+		buf := bytes.Buffer{}
+		errors.PrintStackChain(&buf, err)
+		testutils.AssertLinesMatch(t, buf.String(), "%s",
+			[]string{
+				"root",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func5$",
+				errorTestFileM("440"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+				`^     runtime.goexit$`,
+				`^.+/runtime/.+:\d+$`,
+				"",
+				"CAUSED BY: root",
+			},
+		)
+	})
+	t.Run("prints stack trace of no-stack error wrapping stacked error", func(t *testing.T) {
+		root := errors.New("root")
+		wrapper := pkgerrors.Wrapf(root, "wrapper")
+		buf := bytes.Buffer{}
+		errors.PrintStackChain(&buf, wrapper)
+		testutils.AssertLinesMatch(t, buf.String(), "%s",
+			[]string{
+				"wrapper: root",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func6$",
+				errorTestFileM("459"),
+				`^     testing\.tRunner$`,
+				`^.+/testing/testing.go:\d+$`,
+				`^     runtime.goexit$`,
+				`^.+/runtime/.+:\d+$`,
+				"",
+				"CAUSED BY: wrapper: root",
+				"",
+				"CAUSED BY: root",
+				"^     github\\.com/secureworks/errors_test\\.TestPrintStackChain.func6$",
+				errorTestFileM("458"),
 				`^     testing\.tRunner$`,
 				`^.+/testing/testing.go:\d+$`,
 			},

@@ -14,6 +14,7 @@ package errors
 
 import (
 	"fmt"
+	pkgerrors "github.com/pkg/errors"
 	"io"
 	"strings"
 )
@@ -22,6 +23,10 @@ import (
 // in the chain (if any). It is implemented regardless of the presence of any underlying error in the chain.
 type Unwrapper interface {
 	Unwrap() error
+}
+
+type pkgErrorsStackTracer interface {
+	StackTrace() pkgerrors.StackTrace
 }
 
 // errorImpl implements an error type that provides a message, optional causing error (next in the chain), and the
@@ -269,6 +274,12 @@ func PrintStackChain(w io.Writer, err error) {
 		_, _ = fmt.Fprintf(w, "%s", err.Error())
 		if fp, ok := err.(Framer); ok {
 			_, _ = fmt.Fprintf(w, "%+5v", fp.Frames())
+		} else if pkgError, ok := err.(pkgErrorsStackTracer); ok {
+			st := fmt.Sprintf("%+v", pkgError.StackTrace())
+			lines := strings.Split(st, "\n")
+			for _, line := range lines[1:] {
+				_, _ = fmt.Fprintf(w, "\n     %s", line)
+			}
 		}
 
 		err = Unwrap(err)
@@ -278,7 +289,6 @@ func PrintStackChain(w io.Writer, err error) {
 			_, _ = fmt.Fprintf(w, "CAUSED BY: ")
 		}
 	}
-	//_, _ = fmt.Fprintln(w)
 }
 
 // Error masking.
