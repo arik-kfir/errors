@@ -224,10 +224,7 @@ func (w *errorImpl) Format(s fmt.State, verb rune) {
 	switch verb {
 	case 'v':
 		if s.Flag('+') {
-			_, _ = fmt.Fprintf(s, "%s%+5v", w.Error(), w.Frames())
-			if cause := w.Unwrap(); cause != nil {
-				_, _ = fmt.Fprintf(s, "\n\nCAUSED BY: %+5v", cause)
-			}
+			PrintStackChain(s, w)
 			return
 		}
 		if s.Flag('#') {
